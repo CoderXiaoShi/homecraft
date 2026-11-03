@@ -24,7 +24,7 @@ export function createRig(camera, world) {
   // Portrait screens see less sideways, so start higher and look down into the
   // room; a near-level view filled the lower half of a phone with bare floor.
   const portrait = innerHeight > innerWidth * 1.1;
-  const HOME_VIEW = portrait ? [0.1, 0.4, 8.5] : [0.14, 0.035, 8];
+  const HOME_VIEW = portrait ? [Math.PI / 2, 0.6, 11] : [Math.PI / 2, 0.55, 13];
   let [yaw, pitch, distance] = HOME_VIEW;
   let yawGoal = yaw, pitchGoal = pitch, distanceGoal = distance;
   let intro = null;
