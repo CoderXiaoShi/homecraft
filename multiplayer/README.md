@@ -17,6 +17,8 @@ multiplayer/
 
 ## 一、部署房间服务器
 
+> 只想要「从零到上线」的抄作业版（含 systemd/Docker/Caddy 配置与验收清单）：直接看 **[DEPLOY.md](./DEPLOY.md)**。
+
 在一台有 Node 18+ 的机器上（或 Docker，见下）：
 
 ```sh
