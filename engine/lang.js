@@ -1,7 +1,7 @@
-// Chinese or English (home.config.js `languages`). With both, the visitor's
-// browser decides (Chinese for any zh-*, English for everything else) until
-// they press the 中/EN switch, which is remembered; a ?lang=en or ?lang=zh
-// link picks one for that visit. With one, that is the only language.
+// Chinese or English (home.config.js `languages`). With both, Chinese is the
+// default for every first visit; the 中/EN switch is remembered per visitor
+// (localStorage), and a ?lang=en or ?lang=zh link picks one for that visit.
+// With one, that is the only language.
 // index.html carries both. Long text, written twice, sits in lang="zh-CN" and
 // lang="en" blocks and <html lang> shows one (style.css). A short label is
 // written in one language in the markup with the other beside it: data-en
@@ -19,7 +19,7 @@ function initial() {
   const asked = new URLSearchParams(location.search).get('lang');
   if (valid(asked)) return asked;
   try { const saved = localStorage.getItem(KEY); if (valid(saved)) return saved; } catch {}
-  return (navigator.languages?.[0] || navigator.language || '').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+  return 'zh';   // 默认中文：英文访客按一次 中/EN 开关即记住
 }
 
 export let lang = initial();
