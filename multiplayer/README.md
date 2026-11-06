@@ -59,6 +59,8 @@ multiplayer: { endpoint: 'wss://你的房间地址', maxRemote: 24 },
 - 访客的身份（`Token-xxxx`、随机皮肤种子）存在他们自己浏览器的
   localStorage 里，同一浏览器每次来都是同一张脸。经传送门带着皮肤来的访客
   会穿自己的 PNG 皮肤。`?mp=off` 可临时单机，`?mp=ws://…` 可临时换服务器。
+- 界面文案（在线人数提示、聊天占位、进出场提示等）**固定为中文**；其他语言
+  的站点复制本模块后，改 `multiplayer/client/chat.js` 顶部那几条字符串即可。
 
 站点构建（`tools/build.sh`）已把 `multiplayer/` 带上。要在**别的** Homecraft 站上用：
 把整个 `multiplayer/` 目录拷过去，在它的 `home.config.js` 里加一行 `multiplayer`，

@@ -6,6 +6,7 @@
 import { wornSkin } from '@engine/traveller.js';
 import { SWIM_PIVOT } from '@engine/world/avatar.js';
 import { identity, hueOf } from './identity.js';
+import { seedCanvas } from './skins.js';
 import { createNet } from './net.js';
 import { createChat } from './chat.js';
 import { createRemotes } from './remote.js';
@@ -14,12 +15,10 @@ const SEND_EVERY = 100;      // sample the player at 10 Hz
 const HEARTBEAT = 3000;      // stand still and the island is told anyway
 const RUN_SPEED = 3.7;       // just above the walk speed: anything faster reads as a run
 
-const isZh = () => (document.documentElement.lang || navigator.language || '').toLowerCase().startsWith('zh');
-
 // `app` is what the engine hands world setup(): { stage, world, nav, player,
 // avatar, sound, rig, quality, config }.
 export function createMultiplayer(app) {
-  const { stage, world, nav, player, rig, quality, config } = app;
+  const { stage, world, nav, player, avatar, rig, quality, config } = app;
   const cfg = { ...(config.multiplayer || {}) };
   // `?mp=` overrides the endpoint (a ws:// URL to try another room server,
   // `off` to browse solo); mostly for checks and quick trials.
@@ -35,10 +34,26 @@ export function createMultiplayer(app) {
   chat.track(me.uid, me.name, hueOf(me.uid));
   let net;
 
-  // A skin carried through a portal travels as a PNG; everyone else wears
-  // their seed-painted character.
+  // One face on every screen: a skin carried through a portal (or the owner's
+  // config.skin) travels as a PNG and everyone wears it; otherwise everyone —
+  // including the visitor's own body, which the engine would otherwise paint
+  // with the plain default skin — wears their seed-painted character.
   let carried = null;
-  wornSkin().then(w => { if (w?.value && w.value !== 'default') carried = w.value; }).catch(() => {});
+  wornSkin().then(w => {
+    if (w?.value && w.value !== 'default') {
+      carried = w.value;
+      return;
+    }
+    try {
+      const canvas = avatar?.material?.map?.image;
+      if (canvas?.getContext) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 64, 64);
+        ctx.drawImage(seedCanvas(me.seed), 0, 0);
+        avatar.material.map.needsUpdate = true;
+      }
+    } catch {}
+  }).catch(() => {});
   const skinMsg = () => (carried ? { k: 'png', d: carried } : { k: 'seed', s: me.seed });
 
   let online = 1;
@@ -60,7 +75,7 @@ export function createMultiplayer(app) {
           if (!p?.id) break;
           remotes.join(p);
           chat.track(p.id, p.name || `Token-${p.id.slice(-4)}`, hueOf(p.id));
-          chat.system(isZh() ? `${p.name} 来了` : `${p.name} joined`);
+          chat.system(`${p.name} 来了`);
           online += 1;
           chat.presence(online);
           break;
@@ -69,7 +84,7 @@ export function createMultiplayer(app) {
           const who = remotes.info(msg.id);
           remotes.leave(msg.id);
           chat.untrack(msg.id);
-          if (who) chat.system(isZh() ? `${who.name} 走了` : `${who.name} left`);
+          if (who) chat.system(`${who.name} 走了`);
           online = Math.max(1, online - 1);
           chat.presence(online);
           break;

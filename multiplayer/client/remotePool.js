@@ -18,7 +18,8 @@ const PHONE_BIT = 2, SURFACE_BIT = 4;
 const FLY = 8.5, RUN = 6.2;
 
 // Part geometry and rigging, mirroring engine/world/avatar.js. Pivot is where
-// the limb turns; offset is the mesh's centre inside the pivot's space.
+// the limb turns; offset is the mesh's centre inside the pivot's space. The
+// engine places these in skin pixels (× PX = metres); we store metres.
 const PARTS = [
   { uv: [16, 16, 8, 12, 4], pivot: [0, 18, 0], offset: [0, 0, 0] },                              // torso
   { uv: [0, 0, 8, 8, 8], pivot: [0, 24, 0], offset: [0, 4, 0], look: true },                     // head
@@ -27,7 +28,11 @@ const PARTS = [
   { uv: [32, 48, 4, 12, 4], pivot: [6, 22, 0], offset: [0, -5, 0], key: 'armL', keyZ: 'armLz' }, // left arm
   { uv: [0, 16, 4, 12, 4], pivot: [-2, 12, 0], offset: [0, -6, 0], key: 'legR', keyZ: 'legRz' }, // right leg
   { uv: [16, 48, 4, 12, 4], pivot: [2, 12, 0], offset: [0, -6, 0], key: 'legL', keyZ: 'legLz' }, // left leg
-];
+].map(p => ({
+  ...p,
+  pivot: p.pivot.map(v => v * PX),
+  offset: p.offset.map(v => v * PX),
+}));
 
 function skinnedGeometry([u, v, w, h, d], inflate = 0) {
   const g = new THREE.BoxGeometry((w + inflate) * PX, (h + inflate) * PX, (d + inflate) * PX);
@@ -85,9 +90,10 @@ export function createPool({ stage, nav, cap }) {
 
   // ---------- the meshes ----------
   const layers = new Float32Array(cap);
+  const layerAttr = new THREE.InstancedBufferAttribute(layers, 1);
   const meshes = PARTS.map(part => {
     const mesh = new THREE.InstancedMesh(skinnedGeometry(part.uv, part.inflate), material, cap);
-    mesh.geometry.setAttribute('aLayer', new THREE.InstancedBufferAttribute(layers, 1));
+    mesh.geometry.setAttribute('aLayer', layerAttr);
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     mesh.receiveShadow = true;
     mesh.frustumCulled = false;
@@ -235,8 +241,8 @@ export function createPool({ stage, nav, cap }) {
     const p = a.pose;
     for (let i = 0; i < PARTS.length; i++) {
       const part = PARTS[i];
-      const rotX = part.look ? a.lookP : p[part.key];
-      const rotZ = part.look ? 0 : p[part.keyZ];
+      const rotX = part.look ? a.lookP : part.key ? p[part.key] : 0;
+      const rotZ = part.key ? p[part.keyZ] : 0;
       qp.setFromAxisAngle(AXIS_X, rotX);
       if (part.look) qp.multiply(q2.setFromAxisAngle(AXIS_Y, a.lookY));
       if (rotZ) qp.multiply(q2.setFromAxisAngle(AXIS_Z, rotZ));
@@ -270,6 +276,9 @@ export function createPool({ stage, nav, cap }) {
     if (!free.length) return -1;
     slot = free.pop();
     slots.set(id, slot);
+    // Point this instance's skin sample at its own array layer.
+    layers[slot] = slot;
+    layerAttr.needsUpdate = true;
     return slot;
   }
   function release(id) {

@@ -4,8 +4,8 @@
 // close the tab and the conversation is gone, as promised.
 import * as THREE from 'three';
 
-const zh = (document.documentElement.lang || navigator.language || '').toLowerCase().startsWith('zh');
-const say = (a, b) => (zh ? a : b);
+// The interface copy is Chinese only, per the site owner; other sites that
+// copy this module translate these few strings in place.
 const MAX_LINES = 6, LINE_TTL = 12000, BUBBLE_TTL = 6000;
 
 const CSS = `
@@ -59,7 +59,7 @@ export function createChat({ onSend, selfId }) {
   field.className = 'mp-field';
   const input = document.createElement('input');
   input.maxLength = 120;
-  input.placeholder = say('说点什么…', 'Say something…');
+  input.placeholder = '说点什么…';
   input.autocomplete = 'off';
   field.append(input);
   root.append(log, hint, field);
@@ -101,16 +101,14 @@ export function createChat({ onSend, selfId }) {
 
   // ---------- the hint / presence ----------
   function hint_text() {
-    hint.textContent = connected
-      ? `${online} ${say('人在岛上 · 按 T 聊天', online === 1 ? 'person on the island · press T to chat' : 'people on the island · press T to chat')}`
-      : say('重连中…', 'reconnecting…');
+    hint.textContent = connected ? `${online} 人在岛上 · 按 T 聊天` : '重连中…';
     hint.classList.toggle('down', !connected);
   }
   function presence(n) { online = n; hint_text(); }
   function status(s) {
     connected = s === 'up';
     root.hidden = s === 'offline';
-    if (!root.hidden) { hint_text(); if (connected) system(say('连上了小岛', 'on the island')); }
+    if (!root.hidden) { hint_text(); if (connected) system('连上了小岛'); }
   }
 
   // ---------- the field ----------
@@ -132,7 +130,7 @@ export function createChat({ onSend, selfId }) {
     if (!text) return;
     const now = Date.now();
     while (sent.length && now - sent[0] > 10000) sent.shift();
-    if (sent.length >= 4) { system(say('说得太快了，歇口气', 'easy there — catch a breath')); return; }
+    if (sent.length >= 4) { system('说得太快了，歇口气'); return; }
     sent.push(now);
     onSend(text);
   });
