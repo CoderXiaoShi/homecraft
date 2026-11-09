@@ -33,7 +33,13 @@ const note = (ok, what) => { console.log(`${ok ? '✓' : '✗'} ${what}`); if (!
 
 const browser = await chromium.launch({ args: ['--use-angle=metal'] });
 try {
-  await fetch(`http://127.0.0.1:${PORT}/health`).then(r => r.text()).then(t => note(t.startsWith('ok'), `room server up (${t.trim()})`));
+  // The room server needs a moment to bind its port after the spawn.
+  let health = '';
+  for (let i = 0; i < 20 && !health.startsWith('ok'); i++) {
+    health = await fetch(`http://127.0.0.1:${PORT}/health`).then(r => r.text()).catch(() => '');
+    if (!health.startsWith('ok')) await new Promise(r => setTimeout(r, 300));
+  }
+  note(health.startsWith('ok'), `room server up (${health.trim() || 'no answer'})`);
 
   const ctxA = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const ctxB = await browser.newContext({ viewport: { width: 1280, height: 800 } });
